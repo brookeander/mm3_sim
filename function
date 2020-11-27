@@ -1,0 +1,132 @@
+def MM3(lam, mu1, mu2,mu3, T, N=100):
+    """
+    Inputs:
+    lam = lambda or the arrival rate
+    mu1 = service rate of the 1st server
+    mu2 = service rate of the 2nd server
+    mu3 = service rate of the 3rd server
+    T = time to view the servers' status at
+    N = number of people to enter the system if time is great enough
+    Outputs:
+    The list of events with arrivals and departures:
+    "[event # :time of event, customer #:arrival time, departure time, event type]"
+    Note: for arrival events, the departure time is indicated as a -1
+    """
+    plt.style.use("ggplot")
+    np.random.seed(220)
+    A1 = [0]
+    servetime1=[]
+    servetime2=[]
+    servetime3=[]
+    for i in range(1,N):
+        A1.append(A1[i-1]+np.random.exponential(lam))
+    np.random.seed(220)
+    for i in range(N):
+        servetime1.append(np.random.exponential(mu1))
+        servetime2.append(np.random.exponential(mu2))
+        servetime3.append(np.random.exponential(mu3))
+    S1 = 0
+    S2 = 0
+    S3 = 0
+    tot_line=0
+    tot_insystem=0
+    tot_inline=0
+    inline=0
+    leavetime = []
+    eventlisto = []
+
+    for i in range (N):
+        np.random.seed(220)
+        eventlisto.append([i,round(A1[i],3), round(A1[i],3),"Arrival", -1.000,-1.000,-1.000])
+        if min(S1, S2, S3)==S1:
+            if A1[i]<min(S1, S2, S3):
+                S1=A1[i]+servetime1[i]
+                leavetime.append(S1)
+                t_insystem = S1-A1[i]
+                t_inline = S1-A1[i]-servetime1[i]
+                eventlisto.append([i,round(S1,3),round(A1[i],3),"Depart", round(S1,3), round(t_inline,3), round(t_insystem,3),"S1"])
+            else:
+                S1=A1[i]+servetime1[i]
+                leavetime.append(S1)
+                t_insystem = S1-A1[i]
+                t_inline = S1-A1[i]-servetime1[i]
+                eventlisto.append([i,round(S1,3), round(A1[i],3),"Depart", round(S1,3), round(t_inline,3), round(t_insystem,3),"S1"])
+        elif min(S1, S2, S3)==S2:
+            if A1[i]<min(S1, S2, S3):
+                S2=A1[i]+servetime2[i]
+                leavetime.append(S2)
+                t_insystem = S2-A1[i]
+                t_inline = S2-A1[i]-servetime2[i]
+                eventlisto.append([i,round(S2,3),round(A1[i],3),"Depart", round(S2, 3),round(t_inline,3), round(t_insystem,3),'S2'])
+            else:
+                S2=A1[i]+servetime2[i]
+                leavetime.append(S2)
+                t_insystem = S2-A1[i]
+                t_inline = S2-A1[i]-servetime2[i]
+                eventlisto.append([i,round(S2,3),round(A1[i],3),"Depart", round(S2, 3),round(t_inline,3), round(t_insystem,3),"S2"])
+        else:
+            if A1[i]<min(S1, S2, S3):
+                S3+=servetime3[i]
+                leavetime.append(S3)
+                t_insystem = S3-A1[i]
+                t_inline = S3-A1[i]-servetime3[i]
+                eventlisto.append([i,round(S3,3),round(A1[i],3),"Depart", round(S3, 3), round(t_inline,3), round(t_insystem,3),"S3"])
+
+            else:
+                S3=A1[i]+servetime3[i]
+                leavetime.append(S3)
+                t_insystem = S3-A1[i]
+                t_inline = S3-A1[i]-servetime3[i]
+                eventlisto.append([i,round(S3,3),round(A1[i],3),"Depart", round(S3, 3), round(t_inline,3), round(t_insystem,3),"S3"])
+        for j in leavetime:
+            if j > A1[i]:
+                inline+=1
+        tot_inline+=inline
+
+    inline=0
+    fig = plt.figure()
+    ax = plt.axes()
+    eventlisto.sort(key=lambda x: x[1])
+    
+    departos = 0
+    line_tot = 0
+    system_tot = 0
+    for e in eventlisto:
+        if e[3]=="Depart":
+            departos += 1
+            line_tot+=e[5]
+            system_tot+=e[6]
+    print(f'\nThe average amount of time spent in line is {line_tot/departos:.2f}')
+    print(f'\nThe average amount of time spent in the system is {system_tot/departos:.2f}')
+    
+    print("Time =",T)
+    print(f"#   :Time      Customer    Event")
+    print(f"--------------------------------------")
+    for ind,i in enumerate(eventlisto):
+        if i[3]=="Arrival":
+            inline+=1
+        elif i[3]=="Depart":
+            inline-=1
+        else:
+            inline+=0
+        i.append(inline)
+        if i[1]<=100:
+            print(f"{ind:<3} :{i[1]:<8}  {i[0]+1}:{i[2]},{i[4]:<7} {i[3]}")
+    x = []
+    y = []
+    for i in eventlisto:
+        if i[1]<100:
+            x.append(i[1])
+            y.append(i[-1])
+    for r in eventlisto:
+        if r[3]=="Depart":
+                if r[1]-r[6]<=T<=r[1]:
+                    print(f'\nServer {r[-2]} is busy with customer {r[0]+1}.')
+
+    plt.xlabel("Time")
+    plt.ylabel("# of Customers in Line")
+    plt.title("Number of Customers in Line (t<100)")
+    ax.set_xticks([0+10*m for m in range(11)])
+    ax.set_yticks([0+p for p in range(7)])
+    for q,s in enumerate(x[:-1]):
+        plt.hlines(y[q],s,x[q+1], linewidth=3, color = "dodgerblue")
